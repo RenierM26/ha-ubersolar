@@ -1,0 +1,17 @@
+{
+  "domain": "ubersolar",
+  "name": "UberSolar",
+  "version": "0.0.0.1",
+  "documentation": "https://www.home-assistant.io/integrations/UberSolar",
+  "requirements": ["PyUbersolar==0.0.9"],
+  "config_flow": true,
+  "dependencies": ["bluetooth"],
+  "codeowners": ["@RenierM26"],
+  "bluetooth": [
+    {
+      "local_name": "UberSmart_*"
+    }
+  ],
+  "iot_class": "local_push",
+  "loggers": ["ubersolar"]
+}
