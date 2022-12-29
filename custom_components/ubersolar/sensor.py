@@ -61,6 +61,13 @@ SENSOR_TYPES: dict[str, SensorEntityDescription] = {
         state_class=SensorStateClass.MEASUREMENT,
         entity_registry_enabled_default=True,
     ),
+    "fSolenoidState": SensorEntityDescription(
+        key="fSolenoidState",
+        name="Solenoid State",
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_registry_enabled_default=True,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
     "lluTime": SensorEntityDescription(
         key="lluTime",
         name="Device Time",

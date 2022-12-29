@@ -4,10 +4,11 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
+from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_platform
+from homeassistant.helpers.entity import EntityCategory
 import ubersolar
 
 from .const import DOMAIN
@@ -18,10 +19,32 @@ from .entity import UbersolarEntity
 _LOGGER = logging.getLogger(__name__)
 PARALLEL_UPDATES = 0
 
-SWITCHES_LIST: dict[str, list] = {
+
+SWITCH_METHODS_LIST: dict[str, list] = {
     "bElementOn": ["turn_on_element", "turn_off_element"],
     "bPumpOn": ["turn_on_pump", "turn_off_pump"],
     "bHolidayMode": ["turn_on_holiday", "turn_off_holiday"],
+}
+
+SWITCH_TYPES: dict[str, SwitchEntityDescription] = {
+    "bElementOn": SwitchEntityDescription(
+        key="bElementOn",
+        name="Element",
+        icon="mdi:heating-coil",
+        entity_category=EntityCategory.CONFIG,
+    ),
+    "bPumpOn": SwitchEntityDescription(
+        key="bPumpOn",
+        name="Pump",
+        icon="mdi:water-pump",
+        entity_category=EntityCategory.CONFIG,
+    ),
+    "bHolidayMode": SwitchEntityDescription(
+        key="bHolidayMode",
+        name="Holiday Mode",
+        icon="mdi:beach",
+        entity_category=EntityCategory.CONFIG,
+    ),
 }
 
 
@@ -38,7 +61,7 @@ async def async_setup_entry(
             switch,
         )
         for switch in coordinator.device.status_data[coordinator.address]
-        if switch in SWITCHES_LIST
+        if switch in SWITCH_TYPES
     ]
 
     async_add_entities(entities)
@@ -47,8 +70,8 @@ async def async_setup_entry(
 class UbersmartSwitch(UbersolarEntity, SwitchEntity):
     """Representation of a UberSolar switch."""
 
-    _attr_device_class = SwitchDeviceClass.SWITCH
     _device: ubersolar.UberSmart
+    _attr_has_entity_name = True
 
     def __init__(
         self, coordinator: UbersolarDataUpdateCoordinator, switch: str
@@ -57,8 +80,7 @@ class UbersmartSwitch(UbersolarEntity, SwitchEntity):
         super().__init__(coordinator)
         self._switch = switch
         self._attr_unique_id = f"{coordinator.base_unique_id}-{switch}"
-        self._attr_name = switch
-        self._attr_is_on = False
+        self.entity_description = SWITCH_TYPES[switch]
 
     @property
     def is_on(self) -> bool | None:
@@ -69,7 +91,7 @@ class UbersmartSwitch(UbersolarEntity, SwitchEntity):
         """Turn device on."""
         _LOGGER.info("Turn %s on for device %s", self._switch, self._address)
 
-        switch_method = getattr(self._device, SWITCHES_LIST[self._switch][0])
+        switch_method = getattr(self._device, SWITCH_METHODS_LIST[self._switch][0])
 
         await switch_method()
         await self.coordinator.async_request_refresh()
@@ -78,7 +100,7 @@ class UbersmartSwitch(UbersolarEntity, SwitchEntity):
         """Turn device off."""
         _LOGGER.info("Turn %s off for device %s", self._switch, self._address)
 
-        switch_method = getattr(self._device, SWITCHES_LIST[self._switch][1])
+        switch_method = getattr(self._device, SWITCH_METHODS_LIST[self._switch][1])
 
         await switch_method()
         await self.coordinator.async_request_refresh()
