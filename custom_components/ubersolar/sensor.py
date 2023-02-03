@@ -10,11 +10,11 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
-    ELECTRIC_POTENTIAL_VOLT,
     LIGHT_LUX,
     SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
-    TIME_HOURS,
+    UnitOfElectricPotential,
     UnitOfTemperature,
+    UnitOfTime,
     UnitOfVolume,
 )
 from homeassistant.core import HomeAssistant
@@ -58,7 +58,7 @@ SENSOR_TYPES: dict[str, SensorEntityDescription] = {
         name="Stored Water at 40C",
         native_unit_of_measurement=UnitOfVolume.LITERS,
         device_class=SensorDeviceClass.VOLUME,
-        state_class=SensorStateClass.MEASUREMENT,
+        state_class=SensorStateClass.TOTAL,
         entity_registry_enabled_default=True,
     ),
     "fSolenoidState": SensorEntityDescription(
@@ -78,7 +78,7 @@ SENSOR_TYPES: dict[str, SensorEntityDescription] = {
     "fHours": SensorEntityDescription(
         key="fHours",
         name="Power On Hours",
-        native_unit_of_measurement=TIME_HOURS,
+        native_unit_of_measurement=UnitOfTime.HOURS,
         state_class=SensorStateClass.MEASUREMENT,
         entity_registry_enabled_default=False,
         entity_category=EntityCategory.DIAGNOSTIC,
@@ -94,7 +94,7 @@ SENSOR_TYPES: dict[str, SensorEntityDescription] = {
     "fPanelVoltage": SensorEntityDescription(
         key="fPanelVoltage",
         name="Solar Panel Voltage",
-        native_unit_of_measurement=ELECTRIC_POTENTIAL_VOLT,
+        native_unit_of_measurement=UnitOfElectricPotential.VOLT,
         device_class=SensorDeviceClass.VOLTAGE,
         state_class=SensorStateClass.MEASUREMENT,
         entity_registry_enabled_default=False,
@@ -119,7 +119,8 @@ SENSOR_TYPES: dict[str, SensorEntityDescription] = {
         name="Geyser Size",
         native_unit_of_measurement=UnitOfVolume.LITERS,
         device_class=SensorDeviceClass.VOLUME,
-        state_class=SensorStateClass.MEASUREMENT,
+        state_class=SensorStateClass.TOTAL,
+        entity_category=EntityCategory.DIAGNOSTIC,
         entity_registry_enabled_default=True,
     ),
     "bPanelFaultCode": SensorEntityDescription(
