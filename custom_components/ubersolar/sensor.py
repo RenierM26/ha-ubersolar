@@ -71,7 +71,7 @@ SENSOR_TYPES: dict[str, SensorEntityDescription] = {
     "lluTime": SensorEntityDescription(
         key="lluTime",
         name="Device Time",
-        state_class=SensorStateClass.MEASUREMENT,
+        state_class=None,
         entity_registry_enabled_default=False,
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
