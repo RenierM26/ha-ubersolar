@@ -84,4 +84,4 @@ class UbersmartSelect(UbersolarEntity, SelectEntity):
         )
 
         await switch_method()
-        await self.coordinator.async_request_refresh()
+        self.async_write_ha_state()

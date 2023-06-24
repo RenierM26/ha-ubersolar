@@ -94,7 +94,7 @@ class UbersmartSwitch(UbersolarEntity, SwitchEntity):
         switch_method = getattr(self._device, SWITCH_METHODS_LIST[self._switch][0])
 
         await switch_method()
-        await self.coordinator.async_request_refresh()
+        self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn device off."""
@@ -103,4 +103,4 @@ class UbersmartSwitch(UbersolarEntity, SwitchEntity):
         switch_method = getattr(self._device, SWITCH_METHODS_LIST[self._switch][1])
 
         await switch_method()
-        await self.coordinator.async_request_refresh()
+        self.async_write_ha_state()
