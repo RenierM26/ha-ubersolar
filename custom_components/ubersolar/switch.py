@@ -6,7 +6,7 @@ from typing import Any
 
 from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_platform
 from homeassistant.helpers.entity import EntityCategory
 import ubersolar
@@ -81,11 +81,7 @@ class UbersmartSwitch(UbersolarEntity, SwitchEntity):
         self._switch = switch
         self._attr_unique_id = f"{coordinator.base_unique_id}-{switch}"
         self.entity_description = SWITCH_TYPES[switch]
-
-    @property
-    def is_on(self) -> bool | None:
-        """Return true if device is on."""
-        return self.data[self._switch]
+        self._attr_is_on = self.data[self._switch]
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn device on."""
@@ -94,6 +90,7 @@ class UbersmartSwitch(UbersolarEntity, SwitchEntity):
         switch_method = getattr(self._device, SWITCH_METHODS_LIST[self._switch][0])
 
         await switch_method()
+        self._attr_is_on = True
         self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
@@ -103,4 +100,11 @@ class UbersmartSwitch(UbersolarEntity, SwitchEntity):
         switch_method = getattr(self._device, SWITCH_METHODS_LIST[self._switch][1])
 
         await switch_method()
+        self._attr_is_on = False
         self.async_write_ha_state()
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Handle updated data from the coordinator."""
+        self._attr_is_on = self.data[self._switch]
+        super()._handle_coordinator_update()
