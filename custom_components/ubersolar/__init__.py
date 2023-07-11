@@ -13,6 +13,7 @@ from .const import CONF_RETRY_COUNT, DEFAULT_RETRY_COUNT, DOMAIN
 from .coordinator import UbersolarDataUpdateCoordinator
 
 PLATFORMS: list[Platform] = [
+    Platform.DATETIME,
     Platform.SELECT,
     Platform.SENSOR,
     Platform.SWITCH,
