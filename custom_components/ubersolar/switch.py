@@ -1,15 +1,15 @@
 """Support for UberSolar."""
 from __future__ import annotations
 
+from dataclasses import dataclass
 import logging
 from typing import Any
 
 from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_platform
-from homeassistant.helpers.entity import EntityCategory
-import ubersolar
 
 from .const import DOMAIN
 from .coordinator import UbersolarDataUpdateCoordinator
@@ -20,30 +20,41 @@ _LOGGER = logging.getLogger(__name__)
 PARALLEL_UPDATES = 0
 
 
-SWITCH_METHODS_LIST: dict[str, list] = {
-    "bElementOn": ["turn_on_element", "turn_off_element"],
-    "bPumpOn": ["turn_on_pump", "turn_off_pump"],
-    "bHolidayMode": ["turn_on_holiday", "turn_off_holiday"],
-}
+@dataclass
+class UbersmartSwitchEntityDescriptionMixin:
+    """Mixin values for Ubersmart switch entities."""
 
-SWITCH_TYPES: dict[str, SwitchEntityDescription] = {
-    "bElementOn": SwitchEntityDescription(
+    method: list
+
+
+@dataclass
+class UbersmartSwitchEntityDescription(
+    SwitchEntityDescription, UbersmartSwitchEntityDescriptionMixin
+):
+    """Describe a Ubersmart switch entity."""
+
+
+SWITCH_TYPES: dict[str, UbersmartSwitchEntityDescription] = {
+    "bElementOn": UbersmartSwitchEntityDescription(
         key="bElementOn",
         name="Element",
         icon="mdi:heating-coil",
         entity_category=EntityCategory.CONFIG,
+        method=["turn_on_element", "turn_off_element"],
     ),
-    "bPumpOn": SwitchEntityDescription(
+    "bPumpOn": UbersmartSwitchEntityDescription(
         key="bPumpOn",
         name="Pump",
         icon="mdi:water-pump",
         entity_category=EntityCategory.CONFIG,
+        method=["turn_on_pump", "turn_off_pump"],
     ),
-    "bHolidayMode": SwitchEntityDescription(
+    "bHolidayMode": UbersmartSwitchEntityDescription(
         key="bHolidayMode",
         name="Holiday Mode",
         icon="mdi:beach",
         entity_category=EntityCategory.CONFIG,
+        method=["turn_on_holiday", "turn_off_holiday"],
     ),
 }
 
@@ -70,8 +81,7 @@ async def async_setup_entry(
 class UbersmartSwitch(UbersolarEntity, SwitchEntity):
     """Representation of a UberSolar switch."""
 
-    _device: ubersolar.UberSmart
-    _attr_has_entity_name = True
+    entity_description: UbersmartSwitchEntityDescription
 
     def __init__(
         self, coordinator: UbersolarDataUpdateCoordinator, switch: str
@@ -81,13 +91,13 @@ class UbersmartSwitch(UbersolarEntity, SwitchEntity):
         self._switch = switch
         self._attr_unique_id = f"{coordinator.base_unique_id}-{switch}"
         self.entity_description = SWITCH_TYPES[switch]
-        self._attr_is_on = self.data[self._switch]
+        self._attr_is_on = self.data[switch]
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn device on."""
-        _LOGGER.info("Turn %s on for device %s", self._switch, self._address)
+        _LOGGER.debug("Turn %s on for device %s", self._switch, self._address)
 
-        switch_method = getattr(self._device, SWITCH_METHODS_LIST[self._switch][0])
+        switch_method = getattr(self._device, self.entity_description.method[0])
 
         await switch_method()
         self._attr_is_on = True
@@ -95,9 +105,9 @@ class UbersmartSwitch(UbersolarEntity, SwitchEntity):
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn device off."""
-        _LOGGER.info("Turn %s off for device %s", self._switch, self._address)
+        _LOGGER.debug("Turn %s off for device %s", self._switch, self._address)
 
-        switch_method = getattr(self._device, SWITCH_METHODS_LIST[self._switch][1])
+        switch_method = getattr(self._device, self.entity_description.method[1])
 
         await switch_method()
         self._attr_is_on = False
