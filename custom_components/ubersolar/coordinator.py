@@ -5,9 +5,10 @@ from datetime import timedelta
 import logging
 from typing import TYPE_CHECKING
 
+from ubersolar import UberSmart
+
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-import ubersolar
 
 from .const import DOMAIN
 
@@ -25,7 +26,7 @@ class UbersolarDataUpdateCoordinator(DataUpdateCoordinator):
         hass: HomeAssistant,
         logger: logging.Logger,
         ble_device: BLEDevice,
-        device: ubersolar.UberSmart,
+        device: UberSmart,
         base_unique_id: str,
         device_name: str,
     ) -> None:

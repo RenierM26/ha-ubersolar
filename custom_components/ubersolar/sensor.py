@@ -12,13 +12,13 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     LIGHT_LUX,
     SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+    EntityCategory,
     UnitOfElectricPotential,
     UnitOfTemperature,
     UnitOfTime,
     UnitOfVolume,
 )
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
@@ -43,7 +43,6 @@ SENSOR_TYPES: dict[str, SensorEntityDescription] = {
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
-        entity_registry_enabled_default=True,
     ),
     "fManifoldTemperature": SensorEntityDescription(
         key="fManifoldTemperature",
@@ -51,7 +50,6 @@ SENSOR_TYPES: dict[str, SensorEntityDescription] = {
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
-        entity_registry_enabled_default=True,
     ),
     "fStoredWater": SensorEntityDescription(
         key="fStoredWater",
@@ -59,13 +57,11 @@ SENSOR_TYPES: dict[str, SensorEntityDescription] = {
         native_unit_of_measurement=UnitOfVolume.LITERS,
         device_class=SensorDeviceClass.VOLUME,
         state_class=SensorStateClass.TOTAL,
-        entity_registry_enabled_default=True,
     ),
     "fSolenoidState": SensorEntityDescription(
         key="fSolenoidState",
         name="Solenoid State",
         state_class=SensorStateClass.MEASUREMENT,
-        entity_registry_enabled_default=True,
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
     "lluTime": SensorEntityDescription(
@@ -89,7 +85,6 @@ SENSOR_TYPES: dict[str, SensorEntityDescription] = {
         native_unit_of_measurement=LIGHT_LUX,
         device_class=SensorDeviceClass.ILLUMINANCE,
         state_class=SensorStateClass.MEASUREMENT,
-        entity_registry_enabled_default=False,
     ),
     "fPanelVoltage": SensorEntityDescription(
         key="fPanelVoltage",
@@ -97,7 +92,6 @@ SENSOR_TYPES: dict[str, SensorEntityDescription] = {
         native_unit_of_measurement=UnitOfElectricPotential.VOLT,
         device_class=SensorDeviceClass.VOLTAGE,
         state_class=SensorStateClass.MEASUREMENT,
-        entity_registry_enabled_default=False,
     ),
     "fChipTemp": SensorEntityDescription(
         key="fChipTemp",
@@ -105,13 +99,11 @@ SENSOR_TYPES: dict[str, SensorEntityDescription] = {
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
-        entity_registry_enabled_default=False,
     ),
     "fWaterLevel": SensorEntityDescription(
         key="fWaterLevel",
         name="Water Level in Manifold",
         state_class=SensorStateClass.MEASUREMENT,
-        entity_registry_enabled_default=False,
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
     "fTankSize": SensorEntityDescription(
@@ -121,34 +113,29 @@ SENSOR_TYPES: dict[str, SensorEntityDescription] = {
         device_class=SensorDeviceClass.VOLUME,
         state_class=SensorStateClass.TOTAL,
         entity_category=EntityCategory.DIAGNOSTIC,
-        entity_registry_enabled_default=True,
     ),
     "bPanelFaultCode": SensorEntityDescription(
         key="bPanelFaultCode",
         name="SolarPanel Fault Code",
         state_class=SensorStateClass.MEASUREMENT,
-        entity_registry_enabled_default=False,
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
     "bElementFaultCode": SensorEntityDescription(
         key="bElementFaultCode",
         name="Element Fault Code",
         state_class=SensorStateClass.MEASUREMENT,
-        entity_registry_enabled_default=False,
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
     "bPumpFultCode": SensorEntityDescription(
         key="bPumpFultCode",
         name="Pump Fault Code",
         state_class=SensorStateClass.MEASUREMENT,
-        entity_registry_enabled_default=False,
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
     "bSolenoidFaultCode": SensorEntityDescription(
         key="bSolenoidFaultCode",
         name="Solenoid Fault Code",
         state_class=SensorStateClass.MEASUREMENT,
-        entity_registry_enabled_default=False,
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
 }

@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from ubersolar import UberSolarAdvertisement
 import voluptuous as vol
 
 from homeassistant.components.bluetooth import (
@@ -14,7 +15,6 @@ from homeassistant.config_entries import ConfigEntry, ConfigFlow, OptionsFlow
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import AbortFlow, FlowResult
-from ubersolar import UberSolarAdvertisement
 
 from .const import CONF_RETRY_COUNT, DEFAULT_RETRY_COUNT, DOMAIN
 
@@ -45,7 +45,7 @@ class UbersolarConfigFlow(ConfigFlow, domain=DOMAIN):
         """Get the options flow for this handler."""
         return UbersolarOptionsFlowHandler(config_entry)
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the config flow."""
         self._discovered_adv: UberSolarAdvertisement | None = None
         self._discovered_advs: dict[str, UberSolarAdvertisement] = {}
