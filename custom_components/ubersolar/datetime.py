@@ -1,8 +1,10 @@
 """Support for UberSolar."""
+
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, tzinfo
 import logging
+from typing import cast
 
 from homeassistant.components.datetime import DateTimeEntity, DateTimeEntityDescription
 from homeassistant.config_entries import ConfigEntry
@@ -21,7 +23,7 @@ PARALLEL_UPDATES = 0
 
 DATETIME_TYPE = DateTimeEntityDescription(
     key="lluTime",
-    name="Device Time",
+    translation_key="device_time",
     entity_category=EntityCategory.CONFIG,
 )
 
@@ -49,8 +51,27 @@ class UbersmartDateTime(UbersolarEntity, DateTimeEntity):
     @property
     def native_value(self) -> datetime | None:
         """Return the value reported by the datetime."""
-        return dt_util.parse_datetime(f"{self.data['lluTime']}+02:00")
+        raw_value = self.data.get(DATETIME_TYPE.key)
+        if raw_value is None:
+            return None
+
+        parsed = dt_util.parse_datetime(cast(str, raw_value))
+        if parsed is None:
+            return None
+
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=dt_util.UTC)
+
+        return dt_util.as_local(parsed)
 
     async def async_set_value(self, value: datetime) -> None:
         """Change the date/time."""
-        await self._device.set_current_time()
+        if value.tzinfo is None:
+            tzinfo_value: tzinfo = dt_util.UTC
+            if self.hass and self.hass.config and self.hass.config.time_zone:
+                hass_tz = dt_util.get_time_zone(self.hass.config.time_zone)
+                if hass_tz is not None:
+                    tzinfo_value = hass_tz
+            value = value.replace(tzinfo=tzinfo_value)
+
+        await self._device.set_time(value.astimezone(dt_util.UTC))

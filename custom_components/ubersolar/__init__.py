@@ -1,8 +1,10 @@
 """Support for UberSolar devices."""
 
+from __future__ import annotations
+
 import logging
 
-import ubersolar
+from pyubersolar import UberSmart, close_stale_connections
 
 from homeassistant.components import bluetooth
 from homeassistant.config_entries import ConfigEntry
@@ -19,7 +21,6 @@ PLATFORMS: list[Platform] = [
     Platform.SENSOR,
     Platform.SWITCH,
 ]
-
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -42,15 +43,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             f"Could not find UberSolar device with address {address}"
         )
 
-    await ubersolar.close_stale_connections(ble_device)
+    await close_stale_connections(ble_device)
 
-    device = ubersolar.UberSmart(
-        device=ble_device, retry_count=entry.options[CONF_RETRY_COUNT]
-    )
+    device = UberSmart(device=ble_device, retry_count=entry.options[CONF_RETRY_COUNT])
 
     coordinator = hass.data[DOMAIN][entry.entry_id] = UbersolarDataUpdateCoordinator(
         hass=hass,
-        logger=_LOGGER,
         ble_device=ble_device,
         device=device,
         base_unique_id=entry.unique_id,
@@ -58,24 +56,22 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
 
     await coordinator.async_config_entry_first_refresh()
-
-    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     return True
 
 
-async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Handle options update."""
-    await hass.config_entries.async_reload(entry.entry_id)
-
-
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
 
+    coordinator: UbersolarDataUpdateCoordinator | None = hass.data[DOMAIN].get(
+        entry.entry_id
+    )
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
     if unload_ok:
+        if coordinator:
+            await coordinator.async_shutdown()
         hass.data[DOMAIN].pop(entry.entry_id)
         if not hass.config_entries.async_entries(DOMAIN):
             hass.data.pop(DOMAIN)

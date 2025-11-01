@@ -1,22 +1,28 @@
 """Config flow for UberSolar."""
+
 from __future__ import annotations
 
 import logging
 from typing import Any
 
-from ubersolar import UberSolarAdvertisement
+from pyubersolar import UberSolarAdvertisement
 import voluptuous as vol
 
 from homeassistant.components.bluetooth import (
     BluetoothServiceInfoBleak,
     async_discovered_service_info,
 )
-from homeassistant.config_entries import ConfigEntry, ConfigFlow, OptionsFlow
+from homeassistant.config_entries import (
+    ConfigEntry,
+    ConfigFlow,
+    ConfigFlowResult,
+    OptionsFlowWithReload,
+)
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import callback
-from homeassistant.data_entry_flow import AbortFlow, FlowResult
+from homeassistant.data_entry_flow import AbortFlow
 
-from .const import CONF_RETRY_COUNT, DEFAULT_RETRY_COUNT, DOMAIN
+from .const import CONF_RETRY_COUNT, DEFAULT_NAME, DEFAULT_RETRY_COUNT, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -32,7 +38,7 @@ def short_address(address: str) -> str:
     return f"{results[-2].upper()}{results[-1].upper()}"[-4:]
 
 
-class UbersolarConfigFlow(ConfigFlow, domain=DOMAIN):
+class UbersolarConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore[call-arg]
     """Handle a config flow for UberSolar."""
 
     VERSION = 1
@@ -43,7 +49,7 @@ class UbersolarConfigFlow(ConfigFlow, domain=DOMAIN):
         config_entry: ConfigEntry,
     ) -> UbersolarOptionsFlowHandler:
         """Get the options flow for this handler."""
-        return UbersolarOptionsFlowHandler(config_entry)
+        return UbersolarOptionsFlowHandler()
 
     def __init__(self) -> None:
         """Initialize the config flow."""
@@ -52,14 +58,15 @@ class UbersolarConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def async_step_bluetooth(
         self, discovery_info: BluetoothServiceInfoBleak
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Handle the bluetooth discovery step."""
         _LOGGER.debug("Discovered bluetooth device: %s", discovery_info.as_dict())
+        device_name = discovery_info.name or discovery_info.device.name or DEFAULT_NAME
         await self.async_set_unique_id(format_unique_id(discovery_info.address))
         self._abort_if_unique_id_configured()
         self._discovered_adv = UberSolarAdvertisement(
             discovery_info.device.address,
-            discovery_info.device.name,
+            device_name,
             discovery_info.device,
             discovery_info.advertisement.rssi,
             True,
@@ -72,7 +79,7 @@ class UbersolarConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def _async_create_entry_from_discovery(
         self, user_input: dict[str, Any]
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Create an entry from a discovery."""
         assert self._discovered_adv is not None
 
@@ -86,7 +93,7 @@ class UbersolarConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def async_step_confirm(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Confirm a single device."""
         assert self._discovered_adv is not None
         if user_input is not None:
@@ -109,9 +116,12 @@ class UbersolarConfigFlow(ConfigFlow, domain=DOMAIN):
                 or address in self._discovered_advs
             ):
                 continue
+            device_name = (
+                discovery_info.name or discovery_info.device.name or DEFAULT_NAME
+            )
             parsed = UberSolarAdvertisement(
                 discovery_info.device.address,
-                discovery_info.device.name,
+                device_name,
                 discovery_info.device,
                 discovery_info.advertisement.rssi,
                 True,
@@ -134,7 +144,7 @@ class UbersolarConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Handle the user step to pick discovered device."""
         errors: dict[str, str] = {}
         device_adv: UberSolarAdvertisement | None = None
@@ -147,7 +157,7 @@ class UbersolarConfigFlow(ConfigFlow, domain=DOMAIN):
         if len(self._discovered_advs) == 1:
             # If there is only one device we can ask for a password
             # or simply confirm it
-            device_adv = list(self._discovered_advs.values())[0]
+            device_adv = next(iter(self._discovered_advs.values()))
             await self._async_set_device(device_adv)
             return await self.async_step_confirm()
 
@@ -167,28 +177,27 @@ class UbersolarConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
 
-class UbersolarOptionsFlowHandler(OptionsFlow):
+class UbersolarOptionsFlowHandler(OptionsFlowWithReload):
     """Handle UberSolar options."""
-
-    def __init__(self, config_entry: ConfigEntry) -> None:
-        """Initialize options flow."""
-        self.config_entry = config_entry
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Manage UberSolar options."""
         if user_input is not None:
             # Update common entity options for all other entities.
             return self.async_create_entry(title="", data=user_input)
 
-        options = {
-            vol.Optional(
-                CONF_RETRY_COUNT,
-                default=self.config_entry.options.get(
-                    CONF_RETRY_COUNT, DEFAULT_RETRY_COUNT
-                ),
-            ): int
+        base_schema = vol.Schema({vol.Required(CONF_RETRY_COUNT): int})
+        suggested_values = {
+            CONF_RETRY_COUNT: self.config_entry.options.get(
+                CONF_RETRY_COUNT, DEFAULT_RETRY_COUNT
+            )
         }
 
-        return self.async_show_form(step_id="init", data_schema=vol.Schema(options))
+        return self.async_show_form(
+            step_id="init",
+            data_schema=self.add_suggested_values_to_schema(
+                base_schema, suggested_values
+            ),
+        )

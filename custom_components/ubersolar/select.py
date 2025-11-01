@@ -1,8 +1,10 @@
 """Support for UberSolar."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
 import logging
+from typing import cast
 
 from homeassistant.components.select import SelectEntity, SelectEntityDescription
 from homeassistant.config_entries import ConfigEntry
@@ -19,14 +21,14 @@ _LOGGER = logging.getLogger(__name__)
 PARALLEL_UPDATES = 0
 
 
-@dataclass
+@dataclass(frozen=True, kw_only=True)
 class UbersmartSelectEntityDescriptionMixin:
     """Mixin values for Ubersmart select entities."""
 
-    method: list
+    method: list[str]
 
 
-@dataclass
+@dataclass(frozen=True, kw_only=True)
 class UbersmartSelectEntityDescription(
     SelectEntityDescription, UbersmartSelectEntityDescriptionMixin
 ):
@@ -35,10 +37,10 @@ class UbersmartSelectEntityDescription(
 
 SELECT_TYPE = UbersmartSelectEntityDescription(
     key="eSolenoidMode",
-    name="Solenoid Mode",
+    translation_key="solenoid_mode",
     icon="mdi:electric-switch",
     entity_category=EntityCategory.CONFIG,
-    options=["Off", "On", "Auto"],
+    options=["off", "on", "auto"],
     method=["set_solinoid_off", "set_solinoid_on", "set_solinoid_auto"],
 )
 
@@ -63,7 +65,9 @@ class UbersmartSelect(UbersolarEntity, SelectEntity):
         self._selector = SELECT_TYPE.key
         self._attr_unique_id = f"{coordinator.base_unique_id}-{SELECT_TYPE.key}"
         self.entity_description = SELECT_TYPE
-        self._attr_current_option = SELECT_TYPE.options[self.data[self._selector]]
+        options = cast("list[str]", SELECT_TYPE.options)
+        current_index = cast(int, self.data.get(self._selector, 0))
+        self._attr_current_option = options[current_index]
 
     async def async_select_option(self, option: str) -> None:
         """Change the selected option."""
@@ -71,9 +75,8 @@ class UbersmartSelect(UbersolarEntity, SelectEntity):
             "Set %s value to %s for device %s", self._selector, option, self._address
         )
 
-        switch_method = getattr(
-            self._device, SELECT_TYPE.method[SELECT_TYPE.options.index(option)]
-        )
+        options = cast("list[str]", SELECT_TYPE.options)
+        switch_method = getattr(self._device, SELECT_TYPE.method[options.index(option)])
 
         await switch_method()
         self._attr_current_option = option
@@ -82,5 +85,7 @@ class UbersmartSelect(UbersolarEntity, SelectEntity):
     @callback
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
-        self._attr_current_option = SELECT_TYPE.options[self.data[self._selector]]
+        options = cast("list[str]", SELECT_TYPE.options)
+        current_index = cast(int, self.data.get(self._selector, 0))
+        self._attr_current_option = options[current_index]
         super()._handle_coordinator_update()

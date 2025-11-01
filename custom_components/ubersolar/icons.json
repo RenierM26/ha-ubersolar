@@ -1,0 +1,68 @@
+{
+  "entity": {
+    "sensor": {
+      "rssi": {
+        "default": "mdi:signal"
+      },
+      "water_temperature": {
+        "default": "mdi:coolant-temperature"
+      },
+      "manifold_temperature": {
+        "default": "mdi:thermometer-lines"
+      },
+      "stored_water": {
+        "default": "mdi:water-percent"
+      },
+      "solenoid_state": {
+        "default": "mdi:valve"
+      },
+      "device_time_sensor": {
+        "default": "mdi:clock-outline"
+      },
+      "power_on_hours": {
+        "default": "mdi:clock-time-four-outline"
+      },
+      "light_level": {
+        "default": "mdi:weather-sunny"
+      },
+      "solar_panel_voltage": {
+        "default": "mdi:solar-panel-large"
+      },
+      "controller_temperature": {
+        "default": "mdi:chip"
+      },
+      "water_level": {
+        "default": "mdi:water-opacity"
+      },
+      "tank_size": {
+        "default": "mdi:beaker-outline"
+      },
+      "panel_fault_code": {
+        "default": "mdi:alert-circle"
+      },
+      "element_fault_code": {
+        "default": "mdi:alert-circle"
+      },
+      "pump_fault_code": {
+        "default": "mdi:alert-circle"
+      },
+      "solenoid_fault_code": {
+        "default": "mdi:alert-circle"
+      }
+    },
+    "switch": {
+      "element": {
+        "default": "mdi:heating-coil"
+      },
+      "pump": {
+        "default": "mdi:water-pump",
+        "state": {
+          "off": "mdi:water-pump-off"
+        }
+      },
+      "holiday_mode": {
+        "default": "mdi:beach"
+      }
+    }
+  }
+}
