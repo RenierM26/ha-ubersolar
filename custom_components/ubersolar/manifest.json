@@ -9,7 +9,7 @@
   "codeowners": ["@RenierM26"],
   "config_flow": true,
   "dependencies": ["bluetooth_adapters"],
-  "documentation": "https://www.home-assistant.io/integrations/UberSolar",
+  "documentation": "https://github.com/RenierM26/ha-ubersolar",
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/RenierM26/ha-ubersolar/issues",
   "loggers": ["pyubersolar"],
