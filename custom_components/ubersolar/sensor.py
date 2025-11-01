@@ -1,5 +1,10 @@
 """Support for UberSolar sensors."""
+
 from __future__ import annotations
+
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import cast
 
 from homeassistant.components.bluetooth import async_last_service_info
 from homeassistant.components.sensor import (
@@ -27,116 +32,163 @@ from .entity import UbersolarEntity
 
 PARALLEL_UPDATES = 0
 
-SENSOR_TYPES: dict[str, SensorEntityDescription] = {
-    "rssi": SensorEntityDescription(
+ValueFn = Callable[["UbersolarSensor"], float | int | str | None]
+
+
+@dataclass(frozen=True, kw_only=True)
+class UbersolarSensorEntityDescription(SensorEntityDescription):
+    """Describe a Ubersolar sensor with a value extractor."""
+
+    value_fn: ValueFn
+
+
+def _data_getter(key: str) -> ValueFn:
+    return lambda entity: entity.data.get(key)
+
+
+def _rssi_getter(entity: UbersolarSensor) -> int | None:
+    device_rssi = entity.data.get("wRSSI")
+    if isinstance(device_rssi, int) and device_rssi != 0:
+        return device_rssi
+
+    address = entity.coordinator.address
+    if service_info := async_last_service_info(entity.hass, address, True):
+        return service_info.rssi
+
+    if device_rssi == 0:
+        return None
+
+    return cast(int | None, device_rssi)
+
+
+SENSOR_TYPES: dict[str, UbersolarSensorEntityDescription] = {
+    "rssi": UbersolarSensorEntityDescription(
         key="rssi",
-        name="Bluetooth signal strength",
+        translation_key="rssi",
         native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
         device_class=SensorDeviceClass.SIGNAL_STRENGTH,
         state_class=SensorStateClass.MEASUREMENT,
         entity_registry_enabled_default=False,
         entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=_rssi_getter,
     ),
-    "fWaterTemperature": SensorEntityDescription(
+    "fWaterTemperature": UbersolarSensorEntityDescription(
         key="fWaterTemperature",
-        name="Water Temperature",
+        translation_key="water_temperature",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
+        value_fn=_data_getter("fWaterTemperature"),
     ),
-    "fManifoldTemperature": SensorEntityDescription(
+    "fManifoldTemperature": UbersolarSensorEntityDescription(
         key="fManifoldTemperature",
-        name="Manifold Temperature",
+        translation_key="manifold_temperature",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
+        value_fn=_data_getter("fManifoldTemperature"),
     ),
-    "fStoredWater": SensorEntityDescription(
+    "fStoredWater": UbersolarSensorEntityDescription(
         key="fStoredWater",
-        name="Stored Water at 40C",
+        translation_key="stored_water",
         native_unit_of_measurement=UnitOfVolume.LITERS,
-        device_class=SensorDeviceClass.VOLUME,
-        state_class=SensorStateClass.TOTAL,
+        device_class=SensorDeviceClass.VOLUME_STORAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=_data_getter("fStoredWater"),
     ),
-    "fSolenoidState": SensorEntityDescription(
+    "fSolenoidState": UbersolarSensorEntityDescription(
         key="fSolenoidState",
-        name="Solenoid State",
+        translation_key="solenoid_state",
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        value_fn=_data_getter("fSolenoidState"),
     ),
-    "lluTime": SensorEntityDescription(
+    "lluTime": UbersolarSensorEntityDescription(
         key="lluTime",
-        name="Device Time",
+        translation_key="device_time_sensor",
         state_class=None,
         entity_registry_enabled_default=False,
         entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=_data_getter("lluTime"),
     ),
-    "fHours": SensorEntityDescription(
+    "fHours": UbersolarSensorEntityDescription(
         key="fHours",
-        name="Power On Hours",
+        translation_key="power_on_hours",
         native_unit_of_measurement=UnitOfTime.HOURS,
         state_class=SensorStateClass.MEASUREMENT,
         entity_registry_enabled_default=False,
         entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=_data_getter("fHours"),
     ),
-    "wLux": SensorEntityDescription(
+    "wLux": UbersolarSensorEntityDescription(
         key="wLux",
-        name="Light",
+        translation_key="light_level",
         native_unit_of_measurement=LIGHT_LUX,
         device_class=SensorDeviceClass.ILLUMINANCE,
         state_class=SensorStateClass.MEASUREMENT,
+        value_fn=_data_getter("wLux"),
     ),
-    "fPanelVoltage": SensorEntityDescription(
+    "fPanelVoltage": UbersolarSensorEntityDescription(
         key="fPanelVoltage",
-        name="Solar Panel Voltage",
+        translation_key="solar_panel_voltage",
         native_unit_of_measurement=UnitOfElectricPotential.VOLT,
         device_class=SensorDeviceClass.VOLTAGE,
         state_class=SensorStateClass.MEASUREMENT,
+        value_fn=_data_getter("fPanelVoltage"),
     ),
-    "fChipTemp": SensorEntityDescription(
+    "fChipTemp": UbersolarSensorEntityDescription(
         key="fChipTemp",
-        name="ESP32 Temp",
+        translation_key="controller_temperature",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
+        value_fn=_data_getter("fChipTemp"),
     ),
-    "fWaterLevel": SensorEntityDescription(
+    "fWaterLevel": UbersolarSensorEntityDescription(
         key="fWaterLevel",
-        name="Water Level in Manifold",
+        translation_key="water_level",
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        value_fn=_data_getter("fWaterLevel"),
     ),
-    "fTankSize": SensorEntityDescription(
+    "fTankSize": UbersolarSensorEntityDescription(
         key="fTankSize",
-        name="Geyser Size",
+        translation_key="tank_size",
         native_unit_of_measurement=UnitOfVolume.LITERS,
         device_class=SensorDeviceClass.VOLUME,
-        state_class=SensorStateClass.TOTAL,
         entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        value_fn=_data_getter("fTankSize"),
     ),
-    "bPanelFaultCode": SensorEntityDescription(
+    "bPanelFaultCode": UbersolarSensorEntityDescription(
         key="bPanelFaultCode",
-        name="SolarPanel Fault Code",
-        state_class=SensorStateClass.MEASUREMENT,
+        translation_key="panel_fault_code",
         entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        value_fn=_data_getter("bPanelFaultCode"),
     ),
-    "bElementFaultCode": SensorEntityDescription(
+    "bElementFaultCode": UbersolarSensorEntityDescription(
         key="bElementFaultCode",
-        name="Element Fault Code",
-        state_class=SensorStateClass.MEASUREMENT,
+        translation_key="element_fault_code",
         entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        value_fn=_data_getter("bElementFaultCode"),
     ),
-    "bPumpFultCode": SensorEntityDescription(
+    "bPumpFultCode": UbersolarSensorEntityDescription(
         key="bPumpFultCode",
-        name="Pump Fault Code",
-        state_class=SensorStateClass.MEASUREMENT,
+        translation_key="pump_fault_code",
         entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        value_fn=_data_getter("bPumpFultCode"),
     ),
-    "bSolenoidFaultCode": SensorEntityDescription(
+    "bSolenoidFaultCode": UbersolarSensorEntityDescription(
         key="bSolenoidFaultCode",
-        name="Solenoid Fault Code",
-        state_class=SensorStateClass.MEASUREMENT,
+        translation_key="solenoid_fault_code",
         entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        value_fn=_data_getter("bSolenoidFaultCode"),
     ),
 }
 
@@ -144,23 +196,18 @@ SENSOR_TYPES: dict[str, SensorEntityDescription] = {
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    """Set up Switchbot sensor based on a config entry."""
+    """Set up Ubersolar sensors based on a config entry."""
     coordinator: UbersolarDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
-    entities = [
-        UbersolarSensor(
-            coordinator,
-            sensor,
-        )
-        for sensor in coordinator.device.status_data[coordinator.address]
-        if sensor in SENSOR_TYPES
-    ]
-
-    entities.append(UbersolarRSSISensor(coordinator, "rssi"))
-    async_add_entities(entities)
+    async_add_entities(
+        [UbersolarSensor(coordinator=coordinator, sensor=key) for key in SENSOR_TYPES],
+        update_before_add=False,
+    )
 
 
 class UbersolarSensor(UbersolarEntity, SensorEntity):
     """Representation of a Ubersolar sensor."""
+
+    entity_description: UbersolarSensorEntityDescription
 
     def __init__(
         self,
@@ -174,21 +221,6 @@ class UbersolarSensor(UbersolarEntity, SensorEntity):
         self.entity_description = SENSOR_TYPES[sensor]
 
     @property
-    def native_value(self) -> str | int | None:
+    def native_value(self) -> float | int | str | None:
         """Return the state of the sensor."""
-        return self.data[self._sensor]
-
-
-class UbersolarRSSISensor(UbersolarSensor):
-    """Representation of a Ubersolar RSSI sensor."""
-
-    @property
-    def native_value(self) -> str | int | None:
-        """Return the state of the sensor."""
-        # Switchbot supports both connectable and non-connectable devices
-        # so we need to request the rssi value based on the connectable instead
-        # of the nearest scanner since that is the RSSI that matters for controlling
-        # the device.
-        if service_info := async_last_service_info(self.hass, self._address, True):
-            return service_info.rssi
-        return None
+        return self.entity_description.value_fn(self)

@@ -24,5 +24,83 @@
                 }
             }
         }
+    },
+    "entity": {
+        "datetime": {
+            "device_time": {
+                "name": "Device Time"
+            }
+        },
+        "select": {
+            "solenoid_mode": {
+                "name": "Solenoid Mode",
+                "state": {
+                    "off": "Off",
+                    "on": "On",
+                    "auto": "Auto"
+                }
+            }
+        },
+        "sensor": {
+            "rssi": {
+                "name": "Bluetooth signal strength"
+            },
+            "water_temperature": {
+                "name": "Water Temperature"
+            },
+            "manifold_temperature": {
+                "name": "Manifold Temperature"
+            },
+            "stored_water": {
+                "name": "Stored Water at 40C"
+            },
+            "solenoid_state": {
+                "name": "Solenoid State"
+            },
+            "device_time_sensor": {
+                "name": "Device Time"
+            },
+            "power_on_hours": {
+                "name": "Power On Hours"
+            },
+            "light_level": {
+                "name": "Light"
+            },
+            "solar_panel_voltage": {
+                "name": "Solar Panel Voltage"
+            },
+            "controller_temperature": {
+                "name": "ESP32 Temp"
+            },
+            "water_level": {
+                "name": "Water Level in Manifold"
+            },
+            "tank_size": {
+                "name": "Geyser Size"
+            },
+            "panel_fault_code": {
+                "name": "Solar Panel Fault Code"
+            },
+            "element_fault_code": {
+                "name": "Element Fault Code"
+            },
+            "pump_fault_code": {
+                "name": "Pump Fault Code"
+            },
+            "solenoid_fault_code": {
+                "name": "Solenoid Fault Code"
+            }
+        },
+        "switch": {
+            "element": {
+                "name": "Element"
+            },
+            "pump": {
+                "name": "Pump"
+            },
+            "holiday_mode": {
+                "name": "Holiday Mode"
+            }
+        }
     }
 }

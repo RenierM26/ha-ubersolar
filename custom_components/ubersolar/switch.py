@@ -1,14 +1,19 @@
 """Support for UberSolar."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
 import logging
 from typing import Any
 
-from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
+from homeassistant.components.switch import (
+    SwitchDeviceClass,
+    SwitchEntity,
+    SwitchEntityDescription,
+)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_platform
 
 from .const import DOMAIN
@@ -20,14 +25,14 @@ _LOGGER = logging.getLogger(__name__)
 PARALLEL_UPDATES = 0
 
 
-@dataclass
+@dataclass(frozen=True, kw_only=True)
 class UbersmartSwitchEntityDescriptionMixin:
     """Mixin values for Ubersmart switch entities."""
 
-    method: list
+    method: list[str]
 
 
-@dataclass
+@dataclass(frozen=True, kw_only=True)
 class UbersmartSwitchEntityDescription(
     SwitchEntityDescription, UbersmartSwitchEntityDescriptionMixin
 ):
@@ -37,23 +42,23 @@ class UbersmartSwitchEntityDescription(
 SWITCH_TYPES: dict[str, UbersmartSwitchEntityDescription] = {
     "bElementOn": UbersmartSwitchEntityDescription(
         key="bElementOn",
-        name="Element",
-        icon="mdi:heating-coil",
+        translation_key="element",
         entity_category=EntityCategory.CONFIG,
+        device_class=SwitchDeviceClass.SWITCH,
         method=["turn_on_element", "turn_off_element"],
     ),
     "bPumpOn": UbersmartSwitchEntityDescription(
         key="bPumpOn",
-        name="Pump",
-        icon="mdi:water-pump",
+        translation_key="pump",
         entity_category=EntityCategory.CONFIG,
+        device_class=SwitchDeviceClass.SWITCH,
         method=["turn_on_pump", "turn_off_pump"],
     ),
     "bHolidayMode": UbersmartSwitchEntityDescription(
         key="bHolidayMode",
-        name="Holiday Mode",
-        icon="mdi:beach",
+        translation_key="holiday_mode",
         entity_category=EntityCategory.CONFIG,
+        device_class=SwitchDeviceClass.SWITCH,
         method=["turn_on_holiday", "turn_off_holiday"],
     ),
 }
@@ -66,16 +71,17 @@ async def async_setup_entry(
 ) -> None:
     """Set up UberSolar based on a config entry."""
     coordinator: UbersolarDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
-    entities = [
-        UbersmartSwitch(
-            coordinator,
-            switch,
-        )
-        for switch in coordinator.device.status_data[coordinator.address]
-        if switch in SWITCH_TYPES
-    ]
 
-    async_add_entities(entities)
+    async_add_entities(
+        [
+            UbersmartSwitch(
+                coordinator=coordinator,
+                switch=key,
+            )
+            for key in SWITCH_TYPES
+        ],
+        update_before_add=False,
+    )
 
 
 class UbersmartSwitch(UbersolarEntity, SwitchEntity):
@@ -91,7 +97,11 @@ class UbersmartSwitch(UbersolarEntity, SwitchEntity):
         self._switch = switch
         self._attr_unique_id = f"{coordinator.base_unique_id}-{switch}"
         self.entity_description = SWITCH_TYPES[switch]
-        self._attr_is_on = self.data[switch]
+
+    @property
+    def is_on(self) -> bool:
+        """Return if the switch is on."""
+        return bool(self.data.get(self._switch))
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn device on."""
@@ -100,8 +110,6 @@ class UbersmartSwitch(UbersolarEntity, SwitchEntity):
         switch_method = getattr(self._device, self.entity_description.method[0])
 
         await switch_method()
-        self._attr_is_on = True
-        self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn device off."""
@@ -110,11 +118,3 @@ class UbersmartSwitch(UbersolarEntity, SwitchEntity):
         switch_method = getattr(self._device, self.entity_description.method[1])
 
         await switch_method()
-        self._attr_is_on = False
-        self.async_write_ha_state()
-
-    @callback
-    def _handle_coordinator_update(self) -> None:
-        """Handle updated data from the coordinator."""
-        self._attr_is_on = self.data[self._switch]
-        super()._handle_coordinator_update()
