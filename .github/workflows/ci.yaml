@@ -49,7 +49,7 @@ jobs:
 
       - name: Install tooling + deps
         run: |
-          pip install ruff mypy pytest types-requests homeassistant-stubs types-requests types-PyYAML
+          pip install ruff mypy pytest types-requests
           pip install PyUbersolar  # your runtime dep
 
       - name: Ruff

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, cast
 
 from pyubersolar import UberSolarAdvertisement
 import voluptuous as vol
@@ -25,6 +25,7 @@ from homeassistant.data_entry_flow import AbortFlow
 from .const import CONF_RETRY_COUNT, DEFAULT_NAME, DEFAULT_RETRY_COUNT, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
+ConfigFlowAny = cast(Any, ConfigFlow)
 
 
 def format_unique_id(address: str) -> str:
