@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, cast
+from typing import Any
 
 from pyubersolar import UberSolarAdvertisement
 import voluptuous as vol
@@ -25,7 +25,6 @@ from homeassistant.data_entry_flow import AbortFlow
 from .const import CONF_RETRY_COUNT, DEFAULT_NAME, DEFAULT_RETRY_COUNT, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
-ConfigFlowAny = cast(Any, ConfigFlow)
 
 
 def format_unique_id(address: str) -> str:
@@ -39,7 +38,7 @@ def short_address(address: str) -> str:
     return f"{results[-2].upper()}{results[-1].upper()}"[-4:]
 
 
-class UbersolarConfigFlow(ConfigFlow, domain=DOMAIN):
+class UbersolarConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore[call-arg]
     """Handle a config flow for UberSolar."""
 
     VERSION = 1
